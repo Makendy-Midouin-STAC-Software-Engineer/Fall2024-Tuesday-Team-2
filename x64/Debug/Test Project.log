@@ -1,0 +1,20 @@
+﻿  blackjack.cpp
+C:\Users\Work\source\Test Project\Test Project\blackjack.cpp(191,97): warning C4244: 'argument': conversion from 'T' to 'T', possible loss of data
+          with
+          [
+              T=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+C:\Users\Work\source\Test Project\Test Project\blackjack.cpp(191,77): warning C4244: 'argument': conversion from 'T' to 'T', possible loss of data
+          with
+          [
+              T=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+  Test Project.vcxproj -> C:\Users\Work\source\Test Project\x64\Debug\Test Project.exe
