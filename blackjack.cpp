@@ -485,6 +485,7 @@ int main() {
     sf::Texture gameScreenTexture;
     gameScreenTexture.create(window.getSize().x, window.getSize().y);
 
+    bool buttonLocked = false;
     // Main loop to display the window and circle
     while (window.isOpen()) {
         // Event handling
@@ -516,24 +517,20 @@ int main() {
             }
 
             if (currentGameState == StartScreen) {
-                // Start screen logic
-                if (event.type == sf::Event::MouseMoved && event.mouseButton.button == sf::Mouse::Left) {
+                // Hover effect logic (optional)
+                if (event.type == sf::Event::MouseMoved) {
                     float buttonWidth = 250, buttonHeight = 80;
                     float buttonX = (window.getSize().x - buttonWidth) / 2;
                     float buttonY = 800;
 
                     // Hover effect for Start button
-                    if (event.mouseMove.x > buttonX &&
-                        event.mouseMove.x < buttonX + buttonWidth &&
-                        event.mouseMove.y > buttonY &&
-                        event.mouseMove.y < buttonY + buttonHeight) {
-                        hoverEffect = true;
-                    }
-                    else {
-                        hoverEffect = false;
-                    }
+                    hoverEffect = (event.mouseMove.x > buttonX &&
+                                event.mouseMove.x < buttonX + buttonWidth &&
+                                event.mouseMove.y > buttonY &&
+                                event.mouseMove.y < buttonY + buttonHeight);
                 }
 
+                // Button click detection
                 if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                     float buttonWidth = 250, buttonHeight = 80;
                     float buttonX = (window.getSize().x - buttonWidth) / 2;
@@ -544,11 +541,13 @@ int main() {
                         event.mouseButton.x < buttonX + buttonWidth &&
                         event.mouseButton.y > buttonY &&
                         event.mouseButton.y < buttonY + buttonHeight) {
+                        std::cout << "Start button clicked!" << std::endl;
                         currentGameState = GettingCards;
                         clock.restart();
                     }
                 }
             }
+
             else {
                 // Game logic
                 if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
@@ -559,63 +558,69 @@ int main() {
                         event.mouseButton.y > pauseButtonY && event.mouseButton.y < pauseButtonY + 50) {
                         paused = true;
                     }
+                    if (!buttonLocked){
 
-                    // Button sizes and positions
-                    sf::Vector2f buttonSize(window.getSize().x * 0.1f, window.getSize().y * 0.08f);
-                    float buttonYPos = window.getSize().y * 0.7f;
-                    float leftOffset = window.getSize().x * 0.2f;
-                    float spacing = window.getSize().x * 0.02f;
+                        // Button sizes and positions
+                        sf::Vector2f buttonSize(window.getSize().x * 0.1f, window.getSize().y * 0.08f);
+                        float buttonYPos = window.getSize().y * 0.7f;
+                        float leftOffset = window.getSize().x * 0.2f;
+                        float spacing = window.getSize().x * 0.02f;
 
-                    if (!gameOver) {
-                        // "Hit" button detection
-                        if (event.mouseButton.x > leftOffset &&
-                            event.mouseButton.x < leftOffset + buttonSize.x &&
-                            event.mouseButton.y > buttonYPos &&
-                            event.mouseButton.y < buttonYPos + buttonSize.y) {
-                            // "Hit" button logic
-                            if (!deck.empty()) {
-                                hit = true;
-                                playerCards.push_back(deck.back());
-                                deck.pop_back();
-                                adjustCardPositions(dealerCards, playerCards, window.getSize());
-                                clock.restart();
-                                if (calculateHandValue(playerCards) > 21) {
-                                    resultMessage = "Dealer Wins!";
-                                    gameOver = true;
+                        if (!gameOver) {
+                            // "Hit" button detection
+                            if (event.mouseButton.x > leftOffset &&
+                                event.mouseButton.x < leftOffset + buttonSize.x &&
+                                event.mouseButton.y > buttonYPos &&
+                                event.mouseButton.y < buttonYPos + buttonSize.y) {
+                                // "Hit" button logic
+                                if (!deck.empty()) {
+                                    buttonLocked = true;
+                                    hit = true;
+                                    playerCards.push_back(deck.back());
+                                    deck.pop_back();
+                                    adjustCardPositions(dealerCards, playerCards, window.getSize());
+                                    clock.restart();
+                                    buttonLocked = false;
+                                    if (calculateHandValue(playerCards) > 21) {
+                                        resultMessage = "Dealer Wins!";
+                                        gameOver = true;
+                                        buttonLocked = false;
+                                    }
                                 }
                             }
-                        }
 
-                        // "Stand" button detection
-                        if (event.mouseButton.x > leftOffset + buttonSize.x + spacing &&
-                            event.mouseButton.x < leftOffset + 2 * buttonSize.x + spacing &&
-                            event.mouseButton.y > buttonYPos &&
-                            event.mouseButton.y < buttonYPos + buttonSize.y) {
-                            // "Stand" button logic
-                            playerTurn = false;
-                            while (calculateHandValue(dealerCards) < 17 && !deck.empty()) {
-                                dealerCards.push_back(deck.back());
-                                deck.pop_back();
-                                adjustCardPositions(dealerCards, playerCards, window.getSize());
+                            // "Stand" button detection
+                            if (event.mouseButton.x > leftOffset + buttonSize.x + spacing &&
+                                event.mouseButton.x < leftOffset + 2 * buttonSize.x + spacing &&
+                                event.mouseButton.y > buttonYPos &&
+                                event.mouseButton.y < buttonYPos + buttonSize.y) {
+                                // "Stand" button logic
+                                playerTurn = false;
+                                while (calculateHandValue(dealerCards) < 17 && !deck.empty()) {
+                                    dealerCards.push_back(deck.back());
+                                    deck.pop_back();
+                                    adjustCardPositions(dealerCards, playerCards, window.getSize());
+                                }
+                                resultMessage = determineWinner(dealerCards, playerCards);
+                                gameOver = true;
                             }
-                            resultMessage = determineWinner(dealerCards, playerCards);
-                            gameOver = true;
                         }
-                    }
-                    else {
-                        // "Restart" button detection
-                        if (event.mouseButton.x > leftOffset &&
-                            event.mouseButton.x < leftOffset + buttonSize.x &&
-                            event.mouseButton.y > buttonYPos &&
-                            event.mouseButton.y < buttonYPos + buttonSize.y) {
-                            // "Restart" button logic
-                            resetGameState(currentGameState, initialPlayerCard1, initialPlayerCard2, 
-                                            initialDealerCard1, initialDealerCard2, PlayerCard1Finished, 
-                                            PlayerCard2Finished, DealerCard1Finished, DealerCard2Finished, initialPosition);
-                            playerTurn = true;
-                            gameOver = false;
-                            resultMessage.clear();
-                            clock.restart();
+                        else {
+                            // "Restart" button detection
+                            if (event.mouseButton.x > leftOffset &&
+                                event.mouseButton.x < leftOffset + buttonSize.x &&
+                                event.mouseButton.y > buttonYPos &&
+                                event.mouseButton.y < buttonYPos + buttonSize.y) {
+                                // "Restart" button logic
+                                resetGameState(currentGameState, initialPlayerCard1, initialPlayerCard2, 
+                                                initialDealerCard1, initialDealerCard2, PlayerCard1Finished, 
+                                                PlayerCard2Finished, DealerCard1Finished, DealerCard2Finished, initialPosition);
+                                buttonLocked = true;
+                                playerTurn = true;
+                                gameOver = false;
+                                resultMessage.clear();
+                                clock.restart();
+                            }
                         }
                     }
                 }
@@ -637,13 +642,13 @@ int main() {
         } else if (hit) {
             sf::Time deltaTime = clock.restart();
             float deltaSeconds = deltaTime.asSeconds();
-            window.setView(window.getDefaultView());
-            gameScreenTexture.update(window);
             if (!HitCardFinished){
-            hitGetACard(window, font, window.getSize(), blurShader, blurRenderTexture, gameScreenTexture, dealerCards, playerCards, gameOver, cardTop, pauseButton, pauseText,
+                hitGetACard(window, font, window.getSize(), blurShader, blurRenderTexture, gameScreenTexture, dealerCards, playerCards, gameOver, cardTop, pauseButton, pauseText,
                 hitCard, HitCardFinished, initialPosition, hit, TargetHitCardPosition, speed, deltaSeconds);
             } else {
                 HitCardFinished = true;
+                hit = false;
+                buttonLocked = false;
                 currentGameState = GameStart;
             }
             window.draw(hitCard);
@@ -685,6 +690,7 @@ int main() {
             window.setView(window.getDefaultView());
 
             drawTable(window, font, window.getSize(), dealerCards, playerCards);
+            buttonLocked = true;
 
             if (!PlayerCard1Finished){
                 sf::Vector2f currentPosition = initialPlayerCard1.getPosition();
@@ -768,7 +774,8 @@ int main() {
                     DealerCard2Finished = true;
                 }
             }
-            else {
+            else if (PlayerCard1Finished && PlayerCard2Finished && DealerCard1Finished && DealerCard2Finished){
+                buttonLocked = false;
                 resetGame(dealerCards, playerCards, deck, textures, window.getSize());
                 currentGameState = GameStart;
             }
