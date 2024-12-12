@@ -448,7 +448,7 @@ int main() {
 
     sf::Vector2f TargetHitCardPosition(window.getSize().x / 2, 1080);
 
-    float speed = 1500.0f;
+    float speed = 2500.0f;
     sf::Clock clock;
 
     bool PlayerCard1Finished = false;
